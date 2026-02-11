@@ -7,7 +7,7 @@ const registerPatient = catchAsync(
     async (req: Request, res: Response) => {
         const payload = req.body;
 
-        console.log(payload);
+        // console.log(payload);
 
         const result = await AuthService.registerPatient(payload);
 
