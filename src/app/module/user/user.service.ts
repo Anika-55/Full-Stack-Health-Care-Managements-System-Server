@@ -1,10 +1,10 @@
 import status from "http-status";
 import { ICreateDoctorPayload } from "./user.interface";
-import { Role } from "../generated/prisma/enums";
-import { Specialty } from "../generated/prisma/client";
-import AppError from "../app/errorHelpers/AppError";
-import { prisma } from "../app/lib/prisma";
-import { auth } from "../app/lib/auth";
+import { Role } from "../../../generated/prisma/enums";
+import { Specialty } from "../../../generated/prisma/client";
+import AppError from "../../errorHelpers/AppError";
+import { prisma } from "../../lib/prisma";
+import { auth } from "../../lib/auth";
 
 const createDoctor = async (payload: ICreateDoctorPayload) => {
 
