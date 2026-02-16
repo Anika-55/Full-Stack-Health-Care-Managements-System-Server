@@ -2,10 +2,11 @@
 import { NextFunction, Request, Response } from "express";
 import status from "http-status";
 import z from "zod";
-import { envVars } from "../config/env";
+// import { envVars } from "../config/env";
 import AppError from "../errorHelpers/AppError";
 import { handleZodError } from "../errorHelpers/handleZodError";
 import { TErrorResponse, TErrorSources } from "../interfaces/error.interface";
+import { envVars } from "../../config/env";
 
 
 
