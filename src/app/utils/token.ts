@@ -1,9 +1,8 @@
 import { Response } from "express";
 import { JwtPayload, SignOptions } from "jsonwebtoken";
-
+import { envVars } from "../config/env";
 import { CookieUtils } from "./cookie";
 import { jwtUtils } from "./jwt";
-import { envVars } from "../config/env";
 
 
 //Creating access token
@@ -34,7 +33,7 @@ const setAccessTokenCookie = (res: Response, token: string) => {
         sameSite: "none",
         path: '/',
         //1 day
-        maxAge: 60 * 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 1000,
     });
 }
 
@@ -45,7 +44,7 @@ const setRefreshTokenCookie = (res: Response, token: string) => {
         sameSite: "none",
         path: '/',
         //7d
-        maxAge: 60 * 60 * 60 * 24 * 7,
+        maxAge: 60 * 60 * 24 * 1000 * 7,
     });
 }
 
@@ -56,7 +55,7 @@ const setBetterAuthSessionCookie = (res: Response, token: string) => {
         sameSite: "none",
         path: '/',
         //1 day
-        maxAge: 60 * 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 1000,
     });
 }
 
