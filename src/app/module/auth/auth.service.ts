@@ -382,7 +382,7 @@ const resetPassword = async (email : string, otp : string, newPassword : string)
                 id: isUserExist.id,
             },
             data: {
-                needPasswordChange: false,
+                needPasswordChange: false,J
             }
         })
     }
