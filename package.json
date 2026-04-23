@@ -13,6 +13,7 @@
     "studio": "prisma studio",
     "push": "prisma db push",
     "pull": "prisma db pull",
+    "stripe:webhook": "stripe listen --load-from-webhooks-api --forward-to localhost:5000/webhook",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -39,6 +40,7 @@
     "nodemailer": "^8.0.1",
     "pg": "^8.18.0",
     "qs": "^6.15.0",
+    "stripe": "^20.4.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
