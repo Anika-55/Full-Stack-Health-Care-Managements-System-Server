@@ -1,0 +1,1302 @@
+{
+  "info": {
+    "name": "Healthcare Management API",
+    "description": "Generated from the actual backend implementation in this workspace. This collection reflects the real Express routes, auth middleware, cookies, and Zod validation used by the server at http://localhost:5000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "6a1175da-f9c5-4f83-b76d-a2cf0f0e8fd4"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "apiPrefix", "value": "/api/v1", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "doctorId", "value": "", "type": "string" },
+    { "key": "patientId", "value": "", "type": "string" },
+    { "key": "appointmentId", "value": "", "type": "string" },
+    { "key": "scheduleId", "value": "", "type": "string" },
+    { "key": "specialtyId", "value": "", "type": "string" },
+    { "key": "prescriptionId", "value": "", "type": "string" },
+    { "key": "reviewId", "value": "", "type": "string" },
+    { "key": "adminId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Patient\",\n  \"email\": \"patient.test@example.com\",\n  \"password\": \"Pass1234!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "description": "Public registration endpoint. On success, the server sets accessToken, refreshToken, and better-auth.session_token cookies."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "pm.test(\"Response contains success and data\", function () { pm.expect(response).to.have.property(\"success\"); pm.expect(response).to.have.property(\"data\"); });",
+                  "if (response?.data?.user?.id) { pm.environment.set(\"userId\", String(response.data.user.id)); }",
+                  "if (response?.data?.patient?.id) { pm.environment.set(\"patientId\", String(response.data.patient.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patient.test@example.com\",\n  \"password\": \"Pass1234!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "description": "This is the main app login. It sets cookies: accessToken, refreshToken, better-auth.session_token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test(\"Tokens exist in response\", function () { pm.expect(response.data).to.have.property(\"accessToken\"); pm.expect(response.data).to.have.property(\"refreshToken\"); });",
+                  "if (response?.data?.user?.id) { pm.environment.set(\"userId\", String(response.data.user.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] },
+            "description": "Requires auth. The server checks the Better Auth session cookie and the JWT accessToken cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "const response = pm.response.json();",
+                  "pm.test(\"User data exists\", function () { pm.expect(response.data).to.have.property(\"id\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh-token"] },
+            "description": "Reads refreshToken and better-auth.session_token cookies from the cookie jar. Returns new tokens."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Access token returned\", function () { pm.expect(response.data).to.have.property(\"accessToken\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Pass1234!\",\n  \"newPassword\": \"NewPass123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/change-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "change-password"] },
+            "description": "Requires authenticated session; uses better-auth.session_token cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] },
+            "description": "Logs the user out and clears the accessToken, refreshToken, and better-auth.session_token cookies."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patient.test@example.com\",\n  \"otp\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/verify-email", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-email"] },
+            "description": "OTP-based verification flow using Better Auth plugin. A real OTP must be delivered to the email address."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is accepted\", function () { pm.expect([200, 400, 401]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forget Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patient.test@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/forget-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forget-password"] },
+            "description": "Sends a password reset OTP to the email if the account exists and is verified."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 404\", function () { pm.expect([200, 404]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patient.test@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPass123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "reset-password"] },
+            "description": "Resets password using OTP. Requires a valid OTP that is actually generated and sent by the email verification plugin."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is accepted\", function () { pm.expect([200, 400, 404]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Google Login Start",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/login/google?redirect=/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login", "google"], "query": [{"key": "redirect", "value": "/dashboard"}] },
+            "description": "Starts the social login flow." 
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 302\", function () { pm.expect([200, 302]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Doctor123!\",\n  \"doctor\": {\n    \"name\": \"Dr. Sarah Ahmed\",\n    \"email\": \"doctor.test@example.com\",\n    \"contactNumber\": \"+12345678901\",\n    \"address\": \"123 Health Avenue, Dhaka\",\n    \"registrationNumber\": \"REG-DR-1001\",\n    \"experience\": 8,\n    \"gender\": \"FEMALE\",\n    \"appointmentFee\": 1200,\n    \"qualification\": \"MBBS, FCPS\",\n    \"currentWorkingPlace\": \"Dhaka General Hospital\",\n    \"designation\": \"Consultant Physician\"\n  },\n  \"specialties\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/users/create-doctor", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["users", "create-doctor"] },
+            "description": "Creates a doctor user and doctor profile. The specialties array must contain at least one valid specialty id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "if (response?.data?.id) { pm.environment.set(\"doctorId\", String(response.data.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "Get All Doctors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctors?page=1&limit=10&sortBy=createdAt&sortOrder=desc", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctors"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}, {"key": "sortBy", "value": "createdAt"}, {"key": "sortOrder", "value": "desc"}] },
+            "description": "Admin/super-admin route using QueryBuilder pagination, search, filtering, sorting, includes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Response has meta\", function () { pm.expect(response).to.have.property(\"meta\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Doctor By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctors/{{doctorId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctors", "{{doctorId}}"] },
+            "description": "Fetch a single doctor by id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "const response = pm.response.json();",
+                  "pm.test(\"Doctor returned\", function () { pm.expect(response.data).to.have.property(\"id\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Doctor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctor\": {\n    \"name\": \"Dr. Sarah Ahmed Updated\",\n    \"contactNumber\": \"+12345678999\",\n    \"appointmentFee\": 1350,\n    \"designation\": \"Senior Consultant\"\n  },\n  \"specialties\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctors/{{doctorId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctors", "{{doctorId}}"] },
+            "description": "Admin/super-admin update. The payload shape is { doctor, specialties } per Zod schema."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Doctor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctors/{{doctorId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctors", "{{doctorId}}"] },
+            "description": "Soft deletes the doctor and marks the matching user as deleted."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientInfo\": {\n    \"name\": \"Test Patient Updated\",\n    \"contactNumber\": \"+12345678902\",\n    \"address\": \"456 Health Road, Dhaka\"\n  },\n  \"patientHealthData\": {\n    \"gender\": \"MALE\",\n    \"dateOfBirth\": \"1992-02-14\",\n    \"bloodGroup\": \"O_POSITIVE\",\n    \"hasAllergies\": false,\n    \"hasDiabetes\": false,\n    \"height\": \"170\",\n    \"weight\": \"68\",\n    \"smokingStatus\": false,\n    \"dietaryPreferences\": \"Balanced diet\",\n    \"pregnancyStatus\": false,\n    \"mentalHealthHistory\": \"None\",\n    \"immunizationStatus\": \"Up to date\",\n    \"hasPastSurgeries\": false,\n    \"recentAnxiety\": false,\n    \"recentDepression\": false,\n    \"maritalStatus\": \"Single\"\n  },\n  \"medicalReports\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/patients/update-my-profile", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["patients", "update-my-profile"] },
+            "description": "Updates current patient profile and related health data. A multer middleware also supports file upload fields named profilePhoto and medicalReports."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"scheduleId\": \"{{scheduleId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/book-appointment", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "book-appointment"] },
+            "description": "Creates an appointment for the authenticated patient. Requires a valid doctorId and scheduleId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "if (response?.data?.id) { pm.environment.set(\"appointmentId\", String(response.data.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/my-appointments", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "my-appointments"] },
+            "description": "Returns appointments for the authenticated patient or doctor."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Appointment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INPROGRESS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/change-appointment-status/{{appointmentId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "change-appointment-status", "{{appointmentId}}"] },
+            "description": "Updates appointment status; allowed user roles include PATIENT, DOCTOR, ADMIN, and SUPER_ADMIN."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Single Appointment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/my-single-appointment/{{appointmentId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "my-single-appointment", "{{appointmentId}}"] },
+            "description": "Fetch a single appointment for the current user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/all-appointments", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "all-appointments"] },
+            "description": "Admin-only route that returns all appointments."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Book With Pay Later",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"scheduleId\": \"{{scheduleId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/book-appointment-with-pay-later", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "book-appointment-with-pay-later"] },
+            "description": "Creates an appointment using a pay-later option."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Initiate Payment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/appointments/initiate-payment/{{appointmentId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["appointments", "initiate-payment", "{{appointmentId}}"] },
+            "description": "Initiates payment for an appointment by id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Schedules",
+      "item": [
+        {
+          "name": "Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2026-09-10\",\n  \"endDate\": \"2026-09-10\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"12:00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/schedules", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["schedules"] },
+            "description": "Creates slots between start and end dates/times."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "if (Array.isArray(response.data) && response.data[0]?.id) { pm.environment.set(\"scheduleId\", String(response.data[0].id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Schedules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/schedules?page=1&limit=20&sortBy=startDateTime&sortOrder=asc", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["schedules"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "20"}, {"key": "sortBy", "value": "startDateTime"}, {"key": "sortOrder", "value": "asc"}] },
+            "description": "List schedules with pagination and sorting."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/schedules/{{scheduleId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["schedules", "{{scheduleId}}"] },
+            "description": "Gets one schedule by id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Schedule",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2026-09-11\",\n  \"endDate\": \"2026-09-11\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/schedules/{{scheduleId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["schedules", "{{scheduleId}}"] },
+            "description": "Updates existing schedule times."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/schedules/{{scheduleId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["schedules", "{{scheduleId}}"] },
+            "description": "Deletes a schedule record."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctor Schedules",
+      "item": [
+        {
+          "name": "Create My Doctor Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduleIds\": [\"{{scheduleId}}\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctor-schedules/create-my-doctor-schedule", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctor-schedules", "create-my-doctor-schedule"] },
+            "description": "Links the authenticated doctor to schedule ids."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Doctor Schedules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctor-schedules/my-doctor-schedules?page=1&limit=20", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctor-schedules", "my-doctor-schedules"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "20"}] },
+            "description": "Returns the authenticated doctor's schedule records."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Doctor Schedules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctor-schedules?page=1&limit=20", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctor-schedules"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "20"}] },
+            "description": "Admin/super-admin route for all doctor-schedule links."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Specialties",
+      "item": [
+        {
+          "name": "Create Specialty",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Cardiology", "type": "text" },
+                { "key": "description", "value": "Heart and cardiovascular care", "type": "text" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/specialties", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["specialties"] },
+            "description": "Creates a specialty, with optional file upload via multer."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 201\", function () { pm.expect(pm.response.code).to.equal(201); });",
+                  "if (response?.data?.id) { pm.environment.set(\"specialtyId\", String(response.data.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Specialties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/specialties", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["specialties"] },
+            "description": "Lists specialties."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Specialty",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/specialties/{{specialtyId}}", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["specialties", "{{specialtyId}}"] },
+            "description": "Hard deletes specialty by id; admin/super-admin route."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Get All Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/reviews", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["reviews"] },
+            "description": "Public route to retrieve all reviews."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Give Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"rating\": 5,\n  \"comment\": \"Excellent care and fast response.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/reviews", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["reviews"] },
+            "description": "Creates a review attached to an appointment. Requires PATIENT role."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "if (response?.data?.id) { pm.environment.set(\"reviewId\", String(response.data.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/reviews/my-reviews", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["reviews", "my-reviews"] },
+            "description": "Returns reviews for the authenticated patient or doctor."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prescriptions",
+      "item": [
+        {
+          "name": "Get All Prescriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/prescriptions", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["prescriptions"] },
+            "description": "Admin-only list of prescriptions."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Prescriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/prescriptions/my-prescriptions", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["prescriptions", "my-prescriptions"] },
+            "description": "Gets prescriptions for the authenticated patient or doctor."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Give Prescription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"instructions\": \"Take one tablet twice daily for 5 days and follow up in 7 days.\",\n  \"followUpDate\": \"2026-09-17\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/prescriptions", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["prescriptions"] },
+            "description": "Creates a prescription for an appointment. Requires DOCTOR role."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "if (response?.data?.id) { pm.environment.set(\"prescriptionId\", String(response.data.id)); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get All Admins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/admins", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["admins"] },
+            "description": "Lists all admin and super-admin profiles."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"userStatus\": \"BLOCKED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/admins/change-user-status", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["admins", "change-user-status"] },
+            "description": "Allows admin or super-admin to change a target user's status."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"role\": \"ADMIN\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/admins/change-user-role", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["admins", "change-user-role"] },
+            "description": "Only super-admin may change user roles, with checks enforced in AdminService."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stats",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/stats", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["stats"] },
+            "description": "Requires auth for SUPER_ADMIN, ADMIN, DOCTOR, or PATIENT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RAG",
+      "item": [
+        {
+          "name": "Get RAG Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/rag/stats", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["rag", "stats"] },
+            "description": "RAG stats endpoint. This route is not protected."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingest Doctors",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source\": \"manual\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/rag/ingest-doctors", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["rag", "ingest-doctors"] },
+            "description": "Indexes doctor data for the RAG service."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Query RAG",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Which doctors treat heart disease?\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/rag/query", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["rag", "query"] },
+            "description": "Queries the retrieved medical documents."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.expect(pm.response.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Negative / Validation Tests",
+      "item": [
+        {
+          "name": "Unauthorized Auth Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/auth/me", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["auth", "me"] },
+            "description": "No auth cookie should fail with 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () { pm.expect(pm.response.code).to.equal(401); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forbidden Doctors Route",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctors", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctors"] },
+            "description": "When logged in as PATIENT, this should fail with 403 because the route is restricted to ADMIN and SUPER_ADMIN."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () { pm.expect(pm.response.code).to.equal(403); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validation - Bad Register Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad User\",\n  \"email\": \"not-an-email\",\n  \"password\": \"short\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "description": "Bad email/password triggers validation or schema failure."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 or 422\", function () { pm.expect([400, 422]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Not Found Doctor ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}{{apiPrefix}}/doctors/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}{{apiPrefix}}"], "path": ["doctors", "00000000-0000-0000-0000-000000000000"] },
+            "description": "Uses a non-existent doctor id to trigger a 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () { pm.expect(pm.response.code).to.equal(404); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

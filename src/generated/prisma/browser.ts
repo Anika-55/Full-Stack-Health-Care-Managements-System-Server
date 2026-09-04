@@ -78,6 +78,11 @@ export type Payment = Prisma.PaymentModel
  */
 export type Prescription = Prisma.PrescriptionModel
 /**
+ * Model DocumentEmbedding
+ * 
+ */
+export type DocumentEmbedding = Prisma.DocumentEmbeddingModel
+/**
  * Model Review
  * 
  */
