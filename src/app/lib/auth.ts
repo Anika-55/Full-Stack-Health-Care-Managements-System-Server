@@ -23,7 +23,7 @@ export const auth = betterAuth({
         google:{
             clientId: envVars.GOOGLE_CLIENT_ID,
             clientSecret: envVars.GOOGLE_CLIENT_SECRET,
-            // callbackUrl: envVars.GOOGLE_CALLBACK_URL,
+            callbackUrl: `${envVars.BETTER_AUTH_URL}/api/auth/callback/google`, 
             mapProfileToUser: ()=>{
                 return {
                     role : Role.PATIENT,
@@ -150,27 +150,26 @@ export const auth = betterAuth({
 
     trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:5000", envVars.FRONTEND_URL],
 
-    advanced: {
-        // disableCSRFCheck: true,
-        useSecureCookies : false,
-        cookies:{
-            state:{
-                attributes:{
-                    sameSite: "none",
-                    secure: true,
-                    httpOnly: true,
-                    path: "/",
-                }
-            },
-            sessionToken:{
-                attributes:{
-                    sameSite: "none",
-                    secure: true,
-                    httpOnly: true,
-                    path: "/",
-                }
+ advanced: {
+    useSecureCookies: false,  // Must be false for localhost HTTP
+    cookies: {
+        state: {
+            attributes: {
+                sameSite: "lax",  // "none" requires secure:true (HTTPS)
+                secure: false,    // false for HTTP localhost
+                httpOnly: true,
+                path: "/",
+            }
+        },
+        sessionToken: {
+            attributes: {
+                sameSite: "lax",
+                secure: false,
+                httpOnly: true,
+                path: "/",
             }
         }
     }
+}
 
 });

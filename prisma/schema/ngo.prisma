@@ -1,0 +1,49 @@
+model NGOProgram {
+    id    String @id @default(cuid())
+    ngoId String
+
+    name        String
+    description String?
+    category    String?
+    location    String?
+    image       String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    ngo NGO @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+
+    @@index([ngoId])
+}
+
+model NGO {
+    id          String  @id @default(cuid())
+    name        String
+    slug        String  @unique
+    description String?
+    mission     String?
+    logo        String?
+    coverImage  String?
+
+    email   String?
+    phone   String?
+    website String?
+
+    address String?
+    city    String?
+    country String  @default("Bangladesh")
+
+    foundedYear Int?
+
+    isVerified Boolean @default(false)
+    isActive   Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    programs NGOProgram[]
+
+    @@index([city])
+    @@index([isActive])
+    @@index([isVerified])
+}

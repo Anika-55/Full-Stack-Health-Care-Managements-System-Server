@@ -40,6 +40,32 @@ const registerPatient = catchAsync(
     }
 )
 
+const registerDoctor = catchAsync(
+    async (req: Request, res: Response) => {
+        const payload = req.body;
+
+        const result = await AuthService.registerDoctor(payload);
+
+        const { accessToken, refreshToken, token, ...rest } = result
+
+        tokenUtils.setAccessTokenCookie(res, accessToken);
+        tokenUtils.setRefreshTokenCookie(res, refreshToken);
+        tokenUtils.setBetterAuthSessionCookie(res, token as string);
+
+        sendResponse(res, {
+            httpStatusCode: status.CREATED,
+            success: true,
+            message: "Doctor registered successfully",
+            data: {
+                token,
+                accessToken,
+                refreshToken,
+                ...rest,
+            }
+        })
+    }
+)
+
 const loginUser = catchAsync(
     async (req: Request, res: Response) => {
         const payload = req.body;
@@ -212,7 +238,7 @@ const googleLogin = catchAsync((req: Request, res: Response) => {
 })
 
 const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
-    const redirectPath = req.query.redirect as string || "/dashboard";
+   const redirectPath = req.query.redirect as string || "/dashboard";
 
     const sessionToken = req.cookies["better-auth.session_token"];
 
@@ -243,8 +269,7 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
     tokenUtils.setRefreshTokenCookie(res, refreshToken);
  // ?redirect=//profile -> /profile
     const isValidRedirectPath = redirectPath.startsWith("/") && !redirectPath.startsWith("//");
-    const finalRedirectPath = isValidRedirectPath ? redirectPath : "/dashboard";
-
+    const finalRedirectPath = isValidRedirectPath ? redirectPath : getDefaultDashboardRoute(session.user.role);
     res.redirect(`${envVars.FRONTEND_URL}${finalRedirectPath}`);
 })
 
@@ -255,6 +280,7 @@ const handleOAuthError = catchAsync((req: Request, res: Response) => {
 
 export const AuthController = {
     registerPatient,
+    registerDoctor,
     loginUser,
     getMe,
     getNewToken,

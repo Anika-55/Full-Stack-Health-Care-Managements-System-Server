@@ -1,18 +1,20 @@
+
 import { Server } from "http";
 import app from "./app";
 import { envVars } from "./app/config/env";
-import { seedSuperAdmin } from "./app/utils/seed";
+import { seedSuperAdmin, seedSpecialties } from "./app/utils/seed";  // Add seedSpecialties
 
-let server : Server;
+let server: Server;
 const bootstrap = async() => {
     try {
+        await seedSpecialties();  // Add this line FIRST
         await seedSuperAdmin();
         server = app.listen(envVars.PORT, () => {
             console.log(`Server is running on http://localhost:${envVars.PORT}`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
-    }   
+    }
 }
 
 // SIGTERM signal handler
