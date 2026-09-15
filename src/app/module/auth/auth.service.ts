@@ -130,10 +130,10 @@ const registerDoctor = async (payload: IDoctorRegistrationPayload) => {
                 address: null,
                 isDeleted: false,
                 experience: 0,
-                gender: "OTHER",          
-                appointmentFee: 0,         
-                currentWorkingPlace: "",   
-                designation: "",          
+                gender: "OTHER",
+                appointmentFee: 0,
+                currentWorkingPlace: "",
+                designation: "",
             }
         });
         console.log("Doctor created:", doctor.id);
@@ -165,9 +165,14 @@ const registerDoctor = async (payload: IDoctorRegistrationPayload) => {
         return { ...data, accessToken, refreshToken, doctor };
 
     } catch (error) {
-        console.error("Doctor creation error:", error);
-        await prisma.user.delete({ where: { id: data.user.id } }).catch(() => {});
+        console.error("========== DOCTOR REGISTRATION FAILED ==========");
+        console.error("User ID:", data.user.id);
+        console.error("Email:", data.user.email);
+        console.error("Error:", error);
+        console.error("=================================================");
+
         throw error;
+
     }
 }
 const loginUser = async (payload: ILoginUserPayload) => {
@@ -208,22 +213,24 @@ const loginUser = async (payload: ILoginUserPayload) => {
     return { ...data, accessToken, refreshToken };
 }
 
-const getMe = async (user : IRequestUser) => {
+const getMe = async (user: IRequestUser) => {
     if (!user || !user.userId) {
         throw new AppError(status.UNAUTHORIZED, 'Unauthorized access! User information is missing.');
     }
 
     const isUserExists = await prisma.user.findUnique({
-        where : { id : user.userId },
-        include : {
-            patient : { include : { appointments : true, reviews : true, prescriptions : true, medicalReports : true, patientHealthData : true } },
-            doctor : { include : { specialties : true, appointments : true, reviews : true, prescriptions : true } },
-            admin : true,
+        where: { id: user.userId },
+        include: {
+            patient: { include: { appointments: true, reviews: true, prescriptions: true, medicalReports: true, patientHealthData: true } },
+            doctor: { include: { specialties: true, appointments: true, reviews: true, prescriptions: true } },
+            admin: true,
         }
     })
 
     if (!isUserExists) {
-        throw new AppError(status.NOT_FOUND, "User not found");
+        // User exists in Better Auth but not in Prisma - clean up the orphaned session
+        // This happens when registration transaction failed after Better Auth user creation
+        throw new AppError(status.NOT_FOUND, "User profile not found. Please re-register.");
     }
 
     return isUserExists;
