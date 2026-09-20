@@ -36,6 +36,21 @@ const getDoctorById = catchAsync(
     }
 )
 
+const getMyProfile = catchAsync(
+    async (req: Request, res: Response) => {
+        const userId = req.user?.userId;
+
+        const doctor = await DoctorService.getDoctorByUserId(userId as string);
+
+        sendResponse(res, {
+            httpStatusCode: status.OK,
+            success: true,
+            message: "Doctor profile fetched successfully",
+            data: doctor,
+        })
+    }
+)
+
 const updateDoctor = catchAsync(
     async (req: Request, res: Response) => {
         const { id } = req.params;
@@ -47,6 +62,23 @@ const updateDoctor = catchAsync(
             httpStatusCode: status.OK,
             success: true,
             message: "Doctor updated successfully",
+            data: updatedDoctor,
+        })
+    }
+)
+
+const updateMyProfile = catchAsync(
+    async (req: Request, res: Response) => {
+        const userId = req.user?.userId;
+        const payload = req.body;
+        const profilePhoto = req.file?.path;
+
+        const updatedDoctor = await DoctorService.updateDoctorByUserId(userId as string, payload, profilePhoto);
+
+        sendResponse(res, {
+            httpStatusCode: status.OK,
+            success: true,
+            message: "Doctor profile updated successfully",
             data: updatedDoctor,
         })
     }
@@ -70,6 +102,8 @@ const deleteDoctor = catchAsync(
 export const DoctorController = {
     getAllDoctors,
     getDoctorById,
+    getMyProfile,
     updateDoctor,
+    updateMyProfile,
     deleteDoctor,
 };

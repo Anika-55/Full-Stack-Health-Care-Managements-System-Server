@@ -444,8 +444,97 @@ const cancelUnpaidAppointments = async () => {
             });
         }
     });
+
 }
 
+
+const cancelAppointment = async (
+    appointmentId: string,
+    user: IRequestUser
+) => {
+    const patientData = await prisma.patient.findUnique({
+        where: {
+            email: user.email,
+        },
+    });
+
+    if (!patientData) {
+        throw new AppError(
+            status.NOT_FOUND,
+            "Patient not found"
+        );
+    }
+
+    const appointment = await prisma.appointment.findUnique({
+        where: {
+            id: appointmentId,
+        },
+    });
+
+    if (!appointment) {
+        throw new AppError(
+            status.NOT_FOUND,
+            "Appointment not found"
+        );
+    }
+
+    // Verify that this appointment belongs to the patient
+    if (appointment.patientId !== patientData.id) {
+        throw new AppError(
+            status.FORBIDDEN,
+            "You are not authorized to cancel this appointment"
+        );
+    }
+
+    // Already cancelled
+    if (appointment.status === AppointmentStatus.CANCELED) {
+        throw new AppError(
+            status.BAD_REQUEST,
+            "Appointment is already cancelled"
+        );
+    }
+
+    // Completed appointments cannot be cancelled
+    if (appointment.status === AppointmentStatus.COMPLETED) {
+        throw new AppError(
+            status.BAD_REQUEST,
+            "Cannot cancel a completed appointment"
+        );
+    }
+
+    const cancelledAppointment = await prisma.$transaction(async (tx) => {
+        const updatedAppointment = await tx.appointment.update({
+            where: {
+                id: appointmentId,
+            },
+            data: {
+                status: AppointmentStatus.CANCELED,
+            },
+            include: {
+                doctor: true,
+                patient: true,
+                schedule: true,
+            },
+        });
+
+        // Release the doctor's schedule slot
+        await tx.doctorSchedules.update({
+            where: {
+                doctorId_scheduleId: {
+                    doctorId: appointment.doctorId,
+                    scheduleId: appointment.scheduleId,
+                },
+            },
+            data: {
+                isBooked: false,
+            },
+        });
+
+        return updatedAppointment;
+    });
+
+    return cancelledAppointment;
+};
 
 
 export const AppointmentService = {
@@ -457,4 +546,5 @@ export const AppointmentService = {
     bookAppointmentWithPayLater,
     initiatePayment,
     cancelUnpaidAppointments,
+    cancelAppointment
 }
