@@ -10,7 +10,7 @@ const router = Router();
 
 // Admin routes
 router.get("/",
-    checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
+    checkAuth(Role.PATIENT,Role.ADMIN, Role.SUPER_ADMIN),
     DoctorController.getAllDoctors);
 
 // Doctor self-profile routes (must come before /:id to avoid conflict)
